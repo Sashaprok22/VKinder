@@ -4,7 +4,7 @@ import vk_api, requests, json
 from pprint import pprint
 
 API_URL = 'https://api.vk.com/method/'
-user_token = 'vk1.a.RfkfwZV20ihXF3QhAW7qI8rqWQ8OBw0pz7164OBS2GKM8q6u9qy3xA4YSDllX3ZHmvS7j7GMMI7BUEdZr84gbHTY0txHcy-4XqDRzSakIcwa8qVELHM1qQLCjiKHDSXKzhjBbsOtGYN_Gaz1wd3Qt-O7CE2J-ErwuVu5ywNgnO-ZDn94XIArhxvtvMtorm2Q'
+user_token = ' '
 comm_token = 'vk1.a.uEAZDL6VdipYG2DG8V4Adi1Rkul0lGcw5uS-Fau_BX7tdernJnHWP1sAdbi9Gi05Xv6x8ERic8g0wO_9wTyDAEDWBCmF8UhjOJbTf56OuTA4CXesAWg7w1q7-DASQS8C6Tod-Ai5n9G3kLnarynV2llKki-DrVimbEkDZtfRt_Wy8KBvjVKk0URrkK_apPHW9tRNskxGbB-5itcKwY4Jhw'
 
 class VK:

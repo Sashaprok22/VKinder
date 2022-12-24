@@ -53,8 +53,10 @@ if __name__ == "__main__":
             keyboard.add_button('В чёрный список', color=VkKeyboardColor.POSITIVE)
             keyboard.add_button('Следующий', color=VkKeyboardColor.POSITIVE)
             keyboard1 = keyboard.get_keyboard()
-            bot.send_message(msg.user_id, f'{i[1]} {i[2]}\n{i[3]}\n{i[4][0]}', keyboard1)  # Отправляем ответ
 
+            bot.send_message(msg.user_id, f'{i[1]} {i[2]}\n{i[3]}\n', keyboard1, bot.create_photo_attachment(i[4][0]))
+            bot.send_message(msg.user_id, f'', keyboard1, bot.create_photo_attachment(i[4][1]))
+            bot.send_message(msg.user_id, f'', keyboard1, bot.create_photo_attachment(i[4][2]))
 
 
 

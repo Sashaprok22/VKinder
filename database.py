@@ -20,8 +20,8 @@ class VKinderDB:
             bithday - дата рождения
             city - город
             gender - пол (True - М, False - Ж)
-            photo - json формат, содержит список ссылок на фото.
-                    типа [photo1, photo2, photo3]. Но может быть и другим.
+            photo - содержит список ссылок на фото.
+                    типа [photo1, photo2, photo3]. 
         list - здесь формируются списки избранных и отвергнутых (черный список):
             owner_id - id клиента чат-бота из VK,
                         в humans обязательно присутствует уникальная запись, где vkid == owner_id
@@ -42,7 +42,7 @@ class VKinderDB:
                         birthday date NOT NULL,
                         city varchar NOT NULL,
                         gender bool NOT NULL,
-                        photo JSON
+                        photo varchar[]
                     );
                     CREATE TABLE IF NOT EXISTS list (
                         owner_id int4 REFERENCES humans(vkid),
@@ -52,12 +52,12 @@ class VKinderDB:
                     );
                     """)
                 self.connect.commit()
-                print('БД VKinder создана успешно', database)
+                print('БД создана успешно', database)
             except OperationalError as e:
                 print(f"Произошла ошибка '{e}'")
 
-    def insert_client(self,
-                      owner_id: int, name: str, surname: str, birthday: datetime, city: str, gender: bool, photo: json):
+    def insert_client(self, owner_id: int, name: str, surname: str, birthday: datetime, city: str, gender: bool,
+                      photo: json):
         """
         :param owner_id: id клиента чат-бота из VK
         :param name: имя клиента чат-бота из VK
@@ -83,8 +83,8 @@ class VKinderDB:
                             surname,
                             birthday,
                             city,
-                            gender, 
-                            photo)
+                            gender,
+                            photo) 
                     VALUES
                         (%s, %s, %s, %s, %s, %s, %s) 
                     ON CONFLICT ON CONSTRAINT humans_pkey DO 
@@ -93,15 +93,15 @@ class VKinderDB:
                         surname=%s, 
                         birthday=%s, 
                         city=%s, 
-                        gender=%s, 
-                        photo=%s::json
+                        gender=%s,
+                        photo=%s
                     WHERE humans.vkid=%s;""", (owner_id, name, surname, birthday, city, gender, photo,
                                                name, surname, birthday, city, gender, photo, owner_id))
                 self.connect.commit()
                 print(f'Клиент {name} {surname} успешно добавлен')
             except OperationalError as e:
                 print(f"Произошла ошибка '{e}'")
-
+#
     def insert_selected(self, owner_id: int, vk_id: int, sel_ign: bool,
                         name, surname, birthday, city, gender, photo):
         """

@@ -1,14 +1,11 @@
-# import time
 import configparser
-
-import vk_api, requests, json
+import vk_api
+import requests
 from pprint import pprint
 
 API_URL = 'https://api.vk.com/method/'
-# comm_token = 'vk1.a.uEAZDL6VdipYG2DG8V4Adi1Rkul0lGcw5uS-Fau_BX7tdernJnHWP1sAdbi9Gi05Xv6x8ERic8g0wO_9wTyDAEDWBCmF8UhjOJbTf56OuTA4CXesAWg7w1q7-DASQS8C6Tod-Ai5n9G3kLnarynV2llKki-DrVimbEkDZtfRt_Wy8KBvjVKk0URrkK_apPHW9tRNskxGbB-5itcKwY4Jhw'
-
 config = configparser.ConfigParser()  # создаём объекта парсера
-config.read("settings.ini")  # читаем конфиг
+config.read("..\settings.ini")  # читаем конфиг
 comm_token = config["Tokens"]["comm"]
 user_token = config["Tokens"]["VK"]
 
@@ -26,8 +23,7 @@ class VK:
             'user_ids': user_ids,
             'access_token': user_token,
             'fields': 'city, bdate, sex',
-            'v': '5.131',
-            'is_closed': 'False'
+            'v': '5.131'
         }
         res = requests.get(url, params=params)
         response = res.json().get("response")
@@ -35,14 +31,13 @@ class VK:
 
     def get_vk_photo(self, id):
         metod = 'photos.get'
-        list_photos = []
+        list_photos = {}
         params = {
             'access_token': user_token,
             'v': '5.131',
             'owner_id': id,
             'album_id': 'profile',
-            'extended': '1',
-            'photo_sizes': '1'
+            'extended': '1'
         }
         response = requests.get(url=API_URL + metod, params=params)
         photo = response.json()
@@ -54,8 +49,8 @@ class VK:
                     if k < index_size:
                         index_size = k
                         max_url = j['url']
-                list_photos.append(max_url)
-            return list_photos
+                list_photos.update([(i['likes']['count'], max_url)])
+            return [sorted(list_photos.items(), key=lambda x: -x[0])[i][1] for i in range(3)]
 
     def search_users(self, sex, age_at, age_to, city):
         all_persons = []
@@ -63,23 +58,13 @@ class VK:
         vk_ = vk_api.VkApi(token=user_token)
         response = vk_.method('users.search',
                               {'v': '5.89',
-                               'sort': 1,
                                'sex': sex,
-                               'status': 1,
                                'age_from': age_at,
                                'age_to': age_to,
-                               'has_photo': 1,
-                               'is_closed': False,
-                               'album_id': 'profile',
-                               'count': 25,
-                               'online': 1,
-                               'hometown': city,
-                               'photo_sizes': 1,
-                               'extended': 1
+                               'hometown': city
                                })
         for element in response['items']:
             id = element['id']
-
             person = [
                 id,
                 element['first_name'],
@@ -87,9 +72,7 @@ class VK:
                 link_profile + str(element['id']),
                 self.get_vk_photo(id)
             ]
-
             all_persons.append(person)
-
         return all_persons
 
 
@@ -103,6 +86,6 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
-    # find_people = VK(user_token, API_URL)
-    # pprint(find_people.get_vk_photo(67012330))
+    # main()
+    find_people = VK(user_token, API_URL)
+    pprint(find_people.get_vk_photo(67012330))

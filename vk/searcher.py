@@ -65,14 +65,16 @@ class VK:
                                })
         for element in response['items']:
             id = element['id']
-            person = [
-                id,
-                element['first_name'],
-                element['last_name'],
-                link_profile + str(element['id']),
-                self.get_vk_photo(id)
-            ]
-            all_persons.append(person)
+            photo = self.get_vk_photo(id)
+            if photo is not None:
+                person = [
+                    id,
+                    element['first_name'],
+                    element['last_name'],
+                    link_profile + str(element['id']),
+                    self.get_vk_photo(id)
+                ]
+                all_persons.append(person)
         return all_persons
 
 

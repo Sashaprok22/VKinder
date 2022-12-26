@@ -1,13 +1,12 @@
-import configparser
 import vk_api
 import requests
 from pprint import pprint
 
 API_URL = 'https://api.vk.com/method/'
-config = configparser.ConfigParser()  # создаём объекта парсера
-config.read("..\settings.ini")  # читаем конфиг
-comm_token = config["Tokens"]["comm"]
-user_token = config["Tokens"]["VK"]
+# config = configparser.ConfigParser()  # создаём объекта парсера
+# config.read("..\settings.ini")  # читаем конфиг
+# comm_token = config["Tokens"]["comm"]
+# user_token = config["Tokens"]["VK"]
 
 
 class VK:
@@ -21,7 +20,7 @@ class VK:
         url = API_URL + method
         params = {
             'user_ids': user_ids,
-            'access_token': user_token,
+            'access_token': self.user_token,
             'fields': 'city, bdate, sex',
             'v': '5.131'
         }
@@ -33,7 +32,7 @@ class VK:
         metod = 'photos.get'
         list_photos = {}
         params = {
-            'access_token': user_token,
+            'access_token': self.user_token,
             'v': '5.131',
             'owner_id': id,
             'album_id': 'profile',
@@ -50,20 +49,25 @@ class VK:
                         index_size = k
                         max_url = j['url']
                 list_photos.update([(i['likes']['count'], max_url)])
-            return [sorted(list_photos.items(), key=lambda x: -x[0])[i][1] for i in range(3)]
+            # pprint(list_photos)
+            return [sorted(list_photos.items(), key=lambda x: -x[0])[i][1] for i in range(min(3, len(list_photos)))]
 
     def search_users(self, sex, age_at, age_to, city):
         all_persons = []
         link_profile = 'https://vk.com/id'
-        vk_ = vk_api.VkApi(token=user_token)
+        vk_ = vk_api.VkApi(token=self.user_token)
         response = vk_.method('users.search',
                               {'v': '5.89',
                                'sex': sex,
                                'age_from': age_at,
                                'age_to': age_to,
-                               'hometown': city
+                               'hometown': city,
+                               "can_access_closed": False,
+                               "is_closed": True
                                })
+        pprint(response)
         for element in response['items']:
+            pprint(element)
             id = element['id']
             photo = self.get_vk_photo(id)
             if photo is not None:
@@ -71,14 +75,16 @@ class VK:
                     id,
                     element['first_name'],
                     element['last_name'],
+                    element['bdate'],
                     link_profile + str(element['id']),
-                    self.get_vk_photo(id)
+                    photo
                 ]
                 all_persons.append(person)
         return all_persons
 
 
 def main():
+    user_token = 'vk1.a.EXcM-MWTrqoYwMlsmlnBL94CzAkE2vxsPxVTbx_a3yEgw8hj9qzaL_ZlRhwpnFVCIwBIn0jbjPulTrFT041FdxfFQCBRLE4d79WH8QFxMo-EGqlIrflJUMBJOxggWOOUJ6a2C_b08bSoqKkzeNf7YEuipLSor0sHdmLzNRwsL_J2fJWEGiIR5yQYvaFXXRMw'
     sex = int(input('введите пол \n 1 - женский, \n 2 - мужской: '))
     age_at = int(input("возраст от: "))
     age_to = int(input("возраст до: "))
@@ -88,6 +94,6 @@ def main():
 
 
 if __name__ == '__main__':
-    # main()
-    find_people = VK(user_token, API_URL)
-    pprint(find_people.get_vk_photo(67012330))
+    main()
+    # find_people = VK('vk1.a.EXcM-MWTrqoYwMlsmlnBL94CzAkE2vxsPxVTbx_a3yEgw8hj9qzaL_ZlRhwpnFVCIwBIn0jbjPulTrFT041FdxfFQCBRLE4d79WH8QFxMo-EGqlIrflJUMBJOxggWOOUJ6a2C_b08bSoqKkzeNf7YEuipLSor0sHdmLzNRwsL_J2fJWEGiIR5yQYvaFXXRMw', API_URL)
+    # pprint(find_people.get_info(68693273))

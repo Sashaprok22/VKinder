@@ -12,7 +12,6 @@ class VKinderDB:
         :param password: пароль
         Здесь создается БД.
         Краткое описание таблиц и полей:
-
         humans - содержит информацию о пользователях чат-бота и отобранных кандидатах:
             vkid - id из VK (первичный ключ)
             name - имя
@@ -21,7 +20,7 @@ class VKinderDB:
             city - город
             gender - пол (True - М, False - Ж)
             photo - содержит список ссылок на фото.
-                    типа [photo1, photo2, photo3]. 
+                    типа [photo1, photo2, photo3].
         list - здесь формируются списки избранных и отвергнутых (черный список):
             owner_id - id клиента чат-бота из VK,
                         в humans обязательно присутствует уникальная запись, где vkid == owner_id
@@ -68,7 +67,6 @@ class VKinderDB:
         :param photo: содержит список ссылок на фото. типа [photo1, photo2, photo3].
                         Но может быть и другим в формате json
         :return: nothing
-
         Метод заносит в БД клиента чат-бота. По замыслу вызывается при каждом входе клиента в чат. Если информация в БД
         о текущем клиенте уже есть, она обновляется (бывает клиенты меняют информацию о себе, добавляют фото).
         Параметр photo м.б. пустым.
@@ -117,7 +115,6 @@ class VKinderDB:
         :param photo: содержит список ссылок на фото. типа [photo1, photo2, photo3].
                         Но может быть и другим в формате json. может быть пустым, если нет фоток
         :return: nothing
-
         Метод вызывается, чтобы добавить кандидата в список избранных (sel_ign == True) или в черный список
         (sel_ign == False). В таблицу list вносится id кандидата из VK. Вся остальная информация
         (имя, фамилия, дата рождения, город, пол и ссылки на фото) вносится в таблицу Humans. Если запись о кандидате
@@ -146,7 +143,7 @@ class VKinderDB:
                         birthday=%s, 
                         city=%s, 
                         gender=%s, 
-                        photo=%s::json
+                        photo=%s
                     WHERE humans.vkid=%s;
                     INSERT 
                         INTO list (
@@ -155,9 +152,12 @@ class VKinderDB:
                             sel_ign)
                     VALUES
                         (%s, %s, %s)
-                    ON CONFLICT ON CONSTRAINT list_pk DO NOTHING     
-                    """, (vk_id, name, surname, birthday, city, gender, photo,
-                          name, surname, birthday, city, gender, photo, vk_id, owner_id, vk_id, sel_ign))
+                    ON CONFLICT ON CONSTRAINT list_pk DO
+                    UPDATE SET
+                        sel_ign=%s
+                    WHERE list.owner_id=%s AND list.vkid=%s
+                    """, (vk_id, name, surname, birthday, city, gender, photo, name, surname, birthday, city, gender,
+                          photo, vk_id, owner_id, vk_id, sel_ign, sel_ign, owner_id, vk_id))
                 self.connect.commit()
                 print(f'Выбранная запись {name} {surname} успешно добавлена')
             except OperationalError as e:
@@ -168,7 +168,6 @@ class VKinderDB:
         :param owner_id: id клиента чат-бота из VK
         :param vk_id: id кандидата из VK
         :return: nothing
-
         Метод вызываем, чтобы удалить кандидата из списка "Избранное" или из "Черного" списка (вдруг юзер погорячился,
         внес знаком(ую,ого) в черный список, а потом захотел это исправить).
         """

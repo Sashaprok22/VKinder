@@ -1,22 +1,25 @@
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
-import bot
+import vk.bot
 import database
 import configparser
 from datetime import date, datetime
-from pprint import pprint
+# from pprint import pprint
 import vk.searcher
 
 if __name__ == "__main__":
     API_URL = 'https://api.vk.com/method/'
     config = configparser.ConfigParser()  # создаём объекта парсера
     config.read("settings.ini")  # читаем конфиг
-    bot = bot.Bot(config["Tokens"]["bot"])
+    bot = vk.bot.Bot(config["Tokens"]["bot"])
     comm_token = config["Tokens"]["comm"]
     user_token = config["Tokens"]["VK"]
     VK1 = vk.searcher.VK(user_token, API_URL)
     DB = database.VKinderDB(password='postgres')
     cached_users = {}
     candidate = []
+    some_list = []
+    current = []
+    what_list = True
 
 
     @bot.message_handler("Начать")  # Декоратор добавляющий обработчик на определённое сообщение
@@ -35,13 +38,12 @@ if __name__ == "__main__":
             list_candidates = VK1.search_users(sex=client_sex, age_at=client_age, age_to=client_age, city=client_city)
             client = [client["id"], client["first_name"], client["last_name"], client["bdate"], client_city,
                       client["sex"], list_candidates, black_list]
-            [print(i[0], i[1], i[2]) for i in list_candidates]
-            print(black_list)
             photos = VK1.get_vk_photo(client[0])
             gender = (client[5] == 2)
             DB.insert_client(owner_id=client[0], name=client[1], surname=client[2],
                              birthday=client[3], city=client[4], gender=gender, photo=photos)
             cached_users.update([(msg.user_id, client)])
+            print("Всего1:", len(list_candidates))
         elif len(client[6]) == 0:
             client_sex = {1: 2, 2: 1}[client[5]]
             today = date.today()
@@ -50,9 +52,8 @@ if __name__ == "__main__":
             client[6] = VK1.search_users(sex=client_sex, age_at=client_age, age_to=client_age, city=client[4])
             [black_list.append(i[0]) for i in DB.favorites_list(msg.user_id, False)]
             client[7] = black_list
-            [print(i[0], i[1], i[2]) for i in client[6]]
-            print(black_list)
             cached_users.update([(msg.user_id, client)])
+            print("Всего2:", len(client[6]))
         keyboard = VkKeyboard(one_time=True)
         keyboard.add_button('Следующий', color=VkKeyboardColor.POSITIVE)
         keyboard.add_button('Избранное', color=VkKeyboardColor.POSITIVE)
@@ -82,7 +83,8 @@ if __name__ == "__main__":
         photos = ''
         for i in candidate[5]:
             photos += bot.create_photo_attachment(i) + ','
-        bot.send_message(msg.user_id, f'{candidate[1]} {candidate[2]}\n{candidate[3]}\n', keyboard, photos)
+        bot.send_message(msg.user_id, f'{candidate[1]} {candidate[2]}\n{candidate[3]}\n{candidate[4]}\n',
+                         keyboard, photos)
 
 
     @bot.message_handler("Запомнить")
@@ -95,6 +97,49 @@ if __name__ == "__main__":
         favorites(msg, False)
 
 
+    @bot.message_handler("Избранное")
+    def call_list3(msg):
+        print('См. Избранное')
+        list_check(msg, True)
+
+
+    @bot.message_handler("Чёрный список")
+    def call_list4(msg):
+        print('См. Чёрный список')
+        list_check(msg, False)
+
+
+    @bot.message_handler("Удалить из списка")
+    def del_from_list(msg):
+        global some_list, current
+        DB.delete_from_list(owner_id=msg.user_id, vk_id=current[0])
+        keyboard = VkKeyboard(one_time=True)
+        keyboard.add_button('Следующий из списка', color=VkKeyboardColor.POSITIVE)
+        keyboard = keyboard.get_keyboard()
+        w_l = {True: 'Избранных', False: 'чёрного списка'}[what_list]
+        bot.send_message(msg.user_id, f'запись {current[1]} {current[2]}\n{current[3]}\n удалена из {w_l}',
+                         keyboard)
+
+
+    @bot.message_handler("Следующий из списка")
+    def next_from_list(msg):
+        global some_list, current, what_list
+        keyboard = VkKeyboard(one_time=True)
+        if len(some_list) == 0:
+            keyboard.add_button('Начать', color=VkKeyboardColor.POSITIVE)
+            keyboard = keyboard.get_keyboard()
+            bot.send_message(msg.user_id, f'Список закончился. Если хотите продолжить, нажмите "Начать"', keyboard)
+            return
+        current = some_list.pop()
+        photos = ''
+        for i in current[5]:
+            photos += bot.create_photo_attachment(i) + ','
+        keyboard.add_button('Удалить из списка', color=VkKeyboardColor.POSITIVE)
+        keyboard.add_button('Следующий из списка', color=VkKeyboardColor.POSITIVE)
+        keyboard = keyboard.get_keyboard()
+        bot.send_message(msg.user_id, f'{current[1]} {current[2]}\n{current[3]}\n', keyboard, photos)
+
+
     def favorites(msg, b_w):
         global cached_users, candidate
         DB.insert_selected(owner_id=msg.user_id, vk_id=candidate[0], sel_ign=b_w, name=candidate[1],
@@ -104,40 +149,16 @@ if __name__ == "__main__":
         keyboard.add_button('Следующий', color=VkKeyboardColor.POSITIVE)
         keyboard = keyboard.get_keyboard()
         w_l = {True: 'Избранные', False: 'чёрный список'}[b_w]
-        bot.send_message(msg.user_id,
-                         f'{datetime.now()} {candidate[1]} {candidate[2]}\n{candidate[3]}\n добавлена в {w_l}',
+        bot.send_message(msg.user_id, f'запись {candidate[1]} {candidate[2]}\n{candidate[3]}\n добавлена в {w_l}',
                          keyboard)
 
-        @bot.message_handler("Избранное")
-        def call_list3(msg):
-            print('См. Избранное')
-            list_check(msg, True)
 
-        @bot.message_handler("Чёрный список")
-        def call_list4(msg):
-            print('См. Чёрный список')
-            list_check(msg, False)
+    def list_check(msg, b_w):
+        global some_list, what_list
+        what_list = b_w
+        some_list = []
+        [some_list.append(i) for i in DB.favorites_list(msg.user_id, b_w)]
+        next_from_list(msg)
 
-        def list_check(msg, b_w):
-            print('Смотреть', b_w)
-            some_list = []
-            [some_list.append(i[0]) for i in DB.favorites_list(msg.user_id, b_w)]
-            keyboard = VkKeyboard(one_time=True)
-            keyboard.add_button('Запомнить', color=VkKeyboardColor.POSITIVE)
-            keyboard.add_button('В чёрный список', color=VkKeyboardColor.POSITIVE)
-            keyboard.add_button('Удалить из списка', color=VkKeyboardColor.POSITIVE)
-            keyboard.add_button('Следующий', color=VkKeyboardColor.POSITIVE)
-            keyboard = keyboard.get_keyboard()
-            for i in some_list:
-                photos = ''
-                for i in candidate[5]:
-                    photos += bot.create_photo_attachment(i) + ','
-                bot.send_message(msg.user_id, f'{i[1]} {i[2]}\n{i[3]}\n', keyboard, photos)
-
-
-    # @bot.message_handler("Следующий")
-    # def next_candidate(msg):
-    #     find_vk(msg)
-    #     return
 
     bot.infinity_polling()  # Бесконечный опрос ВК на изменения

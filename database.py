@@ -21,7 +21,7 @@ class VKinderDB:
             city - город
             gender - пол (True - М, False - Ж)
             photo - содержит список ссылок на фото.
-                    типа [photo1, photo2, photo3]. 
+                    типа [photo1, photo2, photo3].
         list - здесь формируются списки избранных и отвергнутых (черный список):
             owner_id - id клиента чат-бота из VK,
                         в humans обязательно присутствует уникальная запись, где vkid == owner_id
@@ -146,7 +146,7 @@ class VKinderDB:
                         birthday=%s, 
                         city=%s, 
                         gender=%s, 
-                        photo=%s::json
+                        photo=%s
                     WHERE humans.vkid=%s;
                     INSERT 
                         INTO list (
@@ -155,9 +155,12 @@ class VKinderDB:
                             sel_ign)
                     VALUES
                         (%s, %s, %s)
-                    ON CONFLICT ON CONSTRAINT list_pk DO NOTHING     
-                    """, (vk_id, name, surname, birthday, city, gender, photo,
-                          name, surname, birthday, city, gender, photo, vk_id, owner_id, vk_id, sel_ign))
+                    ON CONFLICT ON CONSTRAINT list_pk DO
+                    UPDATE SET
+                        sel_ign=%s
+                    WHERE list.owner_id=%s AND list.vkid=%s
+                    """, (vk_id, name, surname, birthday, city, gender, photo, name, surname, birthday, city, gender,
+                          photo, vk_id, owner_id, vk_id, sel_ign, sel_ign, owner_id, vk_id))
                 self.connect.commit()
                 print(f'Выбранная запись {name} {surname} успешно добавлена')
             except OperationalError as e:

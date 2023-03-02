@@ -45,6 +45,7 @@ class Bot:
         }
         return self.vk_session.method("messages.send", values)
 
+
     def infinity_polling(self):
         while True:
             for event in self.longpoll.listen():
@@ -55,12 +56,15 @@ class Bot:
 
 
 if __name__ == "__main__":
-    bot = Bot("group-token")  # Создаём бота с токеном
+    bot = Bot("vk1.a.Kgjchre-b_HkMwcdE97b594DjcK_LVMHtuUSW6ysvK-v7qXrYUkGFap87nbxquuZEv3HT7FOUOQ-zrXmA3oVTHQ3D4d7DS09QXWFkc20pyCiQK0dNuF26djS1xURqsjg4Y9y0Tm4uV7BM1SZ2IAYWf70U6WGs2-hLh7GU9geNjkHkTgqkhekVaWQOTpfVQYPsqIT0A8w_7Y4qHmF2YNbgQ")  # Создаём бота с токеном
 
 
     @bot.message_handler("привет")  # Декоратор добавляющий обработчик на определённое сообщение
     def hello(msg):
-        bot.send_message(msg.user_id, "Привет")  # Отправляем ответ
+        bot.send_message(msg.user_id, msg.user_id, )  # Отправляем ответ
+        print(msg)
+
+
 
 
     bot.infinity_polling()  # Бесконечный опрос ВК на изменения
